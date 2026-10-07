@@ -17,7 +17,7 @@ Clawd Gains does not use the network. It does not send data to other computers.
 ## Events that the mod monitors
 
 - The start and the end of each Claude turn.
-- Permission requests from tools. The mod removes its key before the permission dialog opens.
+- Tool calls. Before each tool call, the mod asks Claude Code if the call needs permission. If it does, the mod removes its key until the dialog closes.
 - Text in the prompt. When you type, Clawd is not shown.
 
 The mod does not change permission decisions, tool results or the text that you type. It does not read or write the files of your projects. It does not start processes.

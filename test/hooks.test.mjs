@@ -6,7 +6,7 @@ import { SCENE_W, SCENE_H } from "../lib/parts.mjs";
 let seq = 0;
 
 // Import nuevo por test: el estado del mod vive a nivel de módulo.
-async function harness({ env = {}, config, settings = { language: "español" }, blit, stored = {}, files = {} } = {}) {
+async function harness({ env = {}, config, settings = { language: "español" }, blit, stored = {}, files = {}, check = { decision: "allow" } } = {}) {
   const { register } = await import(`../hooks/clawd-gains.mjs?instance=${++seq}`);
   const hooks = [];
   const calls = [];
@@ -35,6 +35,7 @@ async function harness({ env = {}, config, settings = { language: "español" }, 
     fs: { read: async (p) => { if (p in files) return files[p]; throw new Error(`ENOENT ${p}`); } },
     settings: { read: async () => settings },
     command: { register: async (spec) => calls.push(["command.register", spec]) },
+    tool: { check: async (args) => { calls.push(["tool.check", args]); return check; } },
   };
 
   const on = (event, matcher, handler) => {
@@ -148,12 +149,11 @@ test("discreto: si escribís en el prompt, Clawd se corre; con el prompt vacío,
 });
 
 test("discreto: con un diálogo pendiente no invita", async () => {
-  const h = await harness();
+  const h = await harness({ check: { decision: "ask" } });
   await start(h);
   await h.advance(8100);
   let during;
   await h.fire("tool.call", { tool: "Bash", command: "ls" }, async () => {
-    await h.fire("tool.check", { tool: "Bash", input: {} }, { decision: "ask" });
     during = await h.fire("ui.render", band(), { theirs: true });
     return { result: "ok" };
   });
@@ -377,22 +377,29 @@ test("con tapsPerRep 3 vuelven los puntitos de la repetición en curso", async (
 });
 
 test("permiso pendiente: la tecla desaparece y no cuenta hasta que termina la herramienta", async () => {
-  const h = await harness({ config: SIEMPRE });
+  const h = await harness({ config: SIEMPRE, check: { decision: "ask" } });
   await start(h);
   const oldButton = tapButton(h, await h.fire("ui.render", band(), null));
   let during;
-  await h.fire("tool.call", { tool: "Bash", command: "rm -rf build" }, async () => {
-    const r = await h.fire("tool.check", { tool: "Bash", input: {} }, { decision: "ask" });
-    assert.equal(r.decision, "ask", "la decisión del motor se devuelve intacta");
+  await h.fire("tool.call", { tool: "Bash", command: "rm -rf build", tool_use_id: "tu1" }, async () => {
     during = await h.fire("ui.render", band(), null);
     await oldButton.props.onPress(); await oldButton.props.onPress(); await oldButton.props.onPress();
     return { result: "ok" };
   });
+  assert.deepEqual(h.calls.find((c) => c[0] === "tool.check")[1], { tool: "Bash", input: { command: "rm -rf build" } }, "consulta la decisión con los argumentos de la herramienta");
   assert.equal(tapButton(h, during), null, "sin botón mientras está el diálogo");
   assert.match(h.texts(during), /respondé a Claude/);
   assert.ok(tapButton(h, await h.fire("ui.render", band(), null)), "el botón vuelve");
   const spinner = await h.fire("ui.render", { component: "Spinner", props: {} }, (e) => e);
   assert.equal(spinner.props.suffix, undefined, "los toques durante el diálogo no contaron");
+});
+
+test("herramienta permitida: la tecla sigue durante la llamada", async () => {
+  const h = await harness({ config: SIEMPRE });
+  await start(h);
+  let during;
+  await h.fire("tool.call", { tool: "Read", file_path: "a.md" }, async () => { during = await h.fire("ui.render", band(), null); return { result: "ok" }; });
+  assert.ok(tapButton(h, during));
 });
 
 test("AskUserQuestion también saca la tecla hasta que se responde", async () => {
@@ -475,7 +482,7 @@ test("con movimiento reducido no hay bucle de animación, pero la tecla funciona
 // Modo panel
 
 test("modo panel: abre con foco al empezar el turno, se cierra ante un permiso y vuelve después", async () => {
-  const h = await harness({ config: { place: "panel" } });
+  const h = await harness({ config: { place: "panel" }, check: { decision: "ask" } });
   await start(h);
   const open = h.calls.find((c) => c[0] === "open");
   assert.equal(open[1].focus, true);
@@ -484,16 +491,16 @@ test("modo panel: abre con foco al empezar el turno, se cierra ante un permiso y
   assert.ok(h.find(tree, "Raster"));
   assert.deepEqual(await h.fire("ui.render", band(), { theirs: true }), { theirs: true }, "en modo panel no usa la banda");
   h.calls.length = 0;
-  await h.fire("tool.call", { tool: "Bash", command: "ls" }, async () => { await h.fire("tool.check", { tool: "Bash", input: {} }, { decision: "ask" }); assert.ok(h.calls.some((c) => c[0] === "close")); return { result: "ok" }; });
+  await h.fire("tool.call", { tool: "Bash", command: "ls" }, async () => { assert.ok(h.calls.some((c) => c[0] === "close")); return { result: "ok" }; });
   assert.ok(h.calls.filter((c) => c[0] === "open").length >= 1, "reabrió el panel");
 });
 
 test("modo panel: Esc de la persona lo deja cerrado ante el siguiente permiso", async () => {
-  const h = await harness({ config: { place: "panel" } });
+  const h = await harness({ config: { place: "panel" }, check: { decision: "ask" } });
   await start(h);
   await h.fire("ui.close", { id: "clawd-gains", origin: { kind: "person" } });
   h.calls.length = 0;
-  await h.fire("tool.call", { tool: "Bash", command: "ls" }, async () => { await h.fire("tool.check", { tool: "Bash", input: {} }, { decision: "ask" }); return { result: "ok" }; });
+  await h.fire("tool.call", { tool: "Bash", command: "ls" }, async () => ({ result: "ok" }));
   assert.ok(!h.calls.some((c) => c[0] === "close" || c[0] === "open"));
 });
 

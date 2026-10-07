@@ -8,11 +8,10 @@ A community mod for Claude Code.
 
 ## Install
 
-Type these commands in Claude Code:
+Type this command in Claude Code:
 
 ```text
-/plugin marketplace add asanjinez/clawd-gains
-/plugin install clawd-gains@clawd-gains
+/plugin install clawd-gains --marketplace asanjinez/clawd-gains
 ```
 
 You must have Claude Code 2.1.284 or later.
@@ -45,7 +44,11 @@ To use `alt+g` instead of `ctrl+x tab`, add this text to `~/.claude/keybindings.
 
 ## Privacy
 
-The mod does not use the network. It does not send data. Refer to [PRIVACY.md](PRIVACY.md).
+The mod does not use the network. It does not send data.
+
+Before each tool call, the mod asks Claude Code if the call needs your permission. If it does, the mod hides its key until the dialog closes. The mod does not change permission decisions.
+
+The mod reads some environment variables and `~/.claude/keybindings.json`. It uses them to adapt to your terminal and to show your shortcut. Refer to [PRIVACY.md](PRIVACY.md).
 
 ## License
 

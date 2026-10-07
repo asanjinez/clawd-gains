@@ -163,19 +163,13 @@ export function register(on, options = {}) {
     return next(e);
   });
 
-  // La tecla se desactiva antes de que aparezca el diálogo de permisos.
-  on("tool.check", async ($, e, next) => {
-    const r = await next(e);
-    if (r?.decision === "ask") await dialogOpens($);
-    return r;
-  });
-
-  // AskUserQuestion también abre un diálogo. Se da por cerrado cuando no queda
-  // ninguna herramienta en curso.
+  // La tecla se desactiva antes de que aparezca un diálogo: el de permisos o el
+  // de AskUserQuestion. Se da por cerrado cuando no queda ninguna herramienta
+  // en curso.
   on("tool.call", async ($, e, next) => {
     m.calls++;
-    if (e.tool === "AskUserQuestion") await dialogOpens($);
     try {
+      if (e.tool === "AskUserQuestion" || await willAsk($, e)) await dialogOpens($);
       return await next(e);
     } finally {
       m.calls = Math.max(0, m.calls - 1);
@@ -509,6 +503,13 @@ async function dialogOpens($) {
   m.dialog = true;
   if (m.paneOpen) await hideForDialog($);
   $.ui.invalidate("ui.render");
+}
+
+// $.tool.check solo consulta: no ejecuta nada ni abre el diálogo.
+async function willAsk($, e) {
+  const { tool, tool_use_id, agentId, consent, ...input } = e;
+  try { return (await $.tool.check({ tool, input }))?.decision === "ask"; }
+  catch (err) { $.ui.log(`clawd-gains: permission check failed: ${err?.message ?? err}`, { to: "debug" }); return false; }
 }
 
 async function openPane($, { manual }) {

@@ -10,7 +10,7 @@ const BAND = {
 } as const
 
 // Lo que Claude Code respondería debajo del mod.
-function world(on, env: Record<string, string> = {}, settings: Record<string, unknown> = {}) {
+function world(on, env: Record<string, string> = {}, settings: Record<string, unknown> = {}, toolCall = async () => ({ result: 'ok' })) {
   const clock = mock.clock(on, { now: 1_000_000 })
   mock.store(on)
   mock.env(on, env)
@@ -23,7 +23,7 @@ function world(on, env: Record<string, string> = {}, settings: Record<string, un
   on('session.start', () => ({ cwd: '/work' }))
   on('turn.start', ($, e) => ({ turnId: e.turnId }))
   on('turn.complete', () => ({ text: '' }))
-  on('tool.call', () => ({ result: 'ok' }))
+  on('tool.call', toolCall)
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['drawn by Claude Code'] }))
   return { clock, blits }
 }
@@ -79,14 +79,21 @@ test('en Ghostty la terminal acepta la imagen PNG', async ($, on) => {
 })
 
 test('con un permiso pendiente no hay tecla; vuelve cuando termina la herramienta', async ($, on) => {
-  world(on)
+  let ui, tapDuring, waitDuring
+  world(on, {}, {}, async () => {
+    await ui.redraw()
+    tapDuring = await ui.find({ key: 'tap' })
+    waitDuring = await ui.find({ type: 'Text', text: /answer Claude first/ })
+    return { result: 'ok' }
+  })
   on('tool.check', () => ({ decision: 'ask' }))
   await startTurn($, 'siempre')
-  await $.tool.check({ tool: 'Bash', input: { command: 'rm -rf build' } })
-  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  expect(await ui.find({ key: 'tap' })).toBeUndefined()
-  expect(await ui.find({ type: 'Text', text: /answer Claude first/ })).toBeDefined()
+  ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect(await ui.find({ key: 'tap' })).toBeDefined()
   await $.tool.call({ tool: 'Bash', command: 'rm -rf build' })
+  expect(tapDuring).toBeUndefined()
+  expect(waitDuring).toBeDefined()
+  await ui.redraw()
   expect(await ui.find({ key: 'tap' })).toBeDefined()
 })
 

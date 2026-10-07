@@ -2,10 +2,16 @@
 
 ## Run the mod without installation
 
-Load the mod for one session. Claude Code loads your changes when you save a file.
+Load the mod from this folder for one session. Claude Code loads your changes when you save a file.
 
 ```sh
 claude --plugin-dir ~/mods/clawd-gains
+```
+
+If you installed the mod from the marketplace, the installed copy does not change when you edit this folder. Disable the installed copy during development:
+
+```text
+/plugin disable clawd-gains@clawd-gains
 ```
 
 Run the animation in a terminal, without Claude Code:
@@ -61,7 +67,7 @@ Edit `config.mjs`. Claude Code loads the change when you save the file.
 
 - The band above the prompt cannot get the keyboard focus automatically. This is a Claude Code rule.
 - Images show only in kitty 0.28 or later and in Ghostty, outside tmux and screen.
-- Claude Code does not send an event for the permission dialog. The mod uses `tool.check` to find permission requests. The mod does not monitor MCP dialogs.
+- Claude Code does not send an event for the permission dialog. Before each tool call, the mod uses `$.tool.check` to find permission requests. This call only reads the decision. The mod does not monitor MCP dialogs.
 
 ## Credits
 
