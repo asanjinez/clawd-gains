@@ -1,0 +1,13 @@
+{
+  "name": "clawd-gains",
+  "owner": { "name": "asanjinez", "url": "https://github.com/asanjinez" },
+  "description": "Clawd Gains: Clawd, Claude Code's mascot, works out while Claude works. Unofficial community mod.",
+  "plugins": [
+    {
+      "name": "clawd-gains",
+      "source": "./",
+      "category": "fun",
+      "tags": ["mods", "clawd", "game", "animation", "pixel-art"]
+    }
+  ]
+}

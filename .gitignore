@@ -1,0 +1,5 @@
+# Claude Code escribe acá los tipos del mod cada vez que lo carga.
+.claude-plugin/types/
+.DS_Store
+Thumbs.db
+desktop.ini

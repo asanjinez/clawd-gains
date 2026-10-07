@@ -1,0 +1,21 @@
+{
+  "name": "clawd-gains",
+  "displayName": "Clawd Gains",
+  "version": "1.0.0",
+  "description": "Clawd works out above the prompt while Claude works. Press x to do reps. Unofficial community mod.",
+  "author": {
+    "name": "asanjinez",
+    "url": "https://github.com/asanjinez"
+  },
+  "homepage": "https://github.com/asanjinez/clawd-gains",
+  "repository": "https://github.com/asanjinez/clawd-gains",
+  "license": "MIT",
+  "keywords": [
+    "mods",
+    "clawd",
+    "fun",
+    "game",
+    "animation",
+    "pixel-art"
+  ]
+}

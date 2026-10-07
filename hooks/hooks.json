@@ -1,0 +1,6 @@
+{
+  "description": "Clawd Gains: Clawd works out above the prompt while Claude works.",
+  "modules": [
+    "./clawd-gains.mjs"
+  ]
+}
